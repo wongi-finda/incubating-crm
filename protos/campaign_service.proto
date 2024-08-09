@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package scheduler;
+
+
+service CampaignService {
+    rpc NotifyUserEvent (UserEvent) returns (Response);
+}
+
+message UserEvent {
+    string event = 1;
+    int64 user_id = 2;
+}
+
+message Response {
+    bool success = 1;
+    string reason = 2;
+}

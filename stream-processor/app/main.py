@@ -11,9 +11,9 @@ from app.model import (
     UserEvent,
     CampaignChangeData,
     CampaignEventType,
-    ActionBasedCampaignTrigger,
+    CampaignTrigger,
 )
-from app.sink import CampaignSchedulerSink
+from app.sink import CampaignServiceSink
 
 flow = Dataflow("crm")
 
@@ -56,60 +56,50 @@ campaign_cdc_data = [
 campaign_change_stream = op.input("campaigns", flow, TestingSource(campaign_cdc_data))
 
 
+# TODO: 더 심플하게 하려면 관심있는 이벤트들만 set으로 관리하고 필터링 된 유저 이벤트만 스케쥴러로 보낸다.
+
+
 @dataclass
 class CampaignTriggerChangeRecord:
-    op: Literal["create", "delete"]
     event: str
+    op: Literal["create", "delete"]
     type: CampaignEventType
     campaign_id: int
 
 
-# TODO: stateful_map()의 mapper에 통합
 def flat_campaign_change_datasets(item: CampaignChangeData) -> list[CampaignTriggerChangeRecord]:
     out = []
 
-    def generate_record(
+    def new_record(
             _op: Literal["create", "delete"],
             _type: CampaignEventType,
             _data: Campaign,
     ) -> CampaignTriggerChangeRecord:
-        match _op, _type:
-            case ("create", "trigger_event"):
-                event = _data.trigger_event
-            case ("create", "exception_event"):
-                event = _data.exception_event
-            case ("delete", "trigger_event"):
-                event = _data.trigger_event
-            case ("delete", "exception_event"):
-                event = _data.exception_event
-            case _:
-                raise RuntimeError()
-
         return CampaignTriggerChangeRecord(
+            event=getattr(_data, _type),
             op=_op,
-            event=event,
             type=_type,
             campaign_id=_data.id,
         )
 
     match item.op:
         case "c":
-            out.append(generate_record("create", "trigger_event", item.after))
+            out.append(new_record("create", "trigger_event", item.after))
             if item.after.exception_event:
-                out.append(generate_record("create", "exception_event", item.after))
+                out.append(new_record("create", "exception_event", item.after))
         case "u":
             if item.before.trigger_event != item.after.trigger_event:
-                out.append(generate_record("delete", "trigger_event", item.before))
-                out.append(generate_record("create", "trigger_event", item.after))
+                out.append(new_record("delete", "trigger_event", item.before))
+                out.append(new_record("create", "trigger_event", item.after))
             if item.before.exception_event != item.after.exception_event:
                 if item.before.exception_event:
-                    out.append(generate_record("delete", "exception_event", item.before))
+                    out.append(new_record("delete", "exception_event", item.before))
                 if item.after.exception_event:
-                    out.append(generate_record("create", "exception_event", item.after))
+                    out.append(new_record("create", "exception_event", item.after))
         case "d":
-            out.append(generate_record("delete", "trigger_event", item.before))
+            out.append(new_record("delete", "trigger_event", item.before))
             if item.before.exception_event:
-                out.append(generate_record("delete", "exception_event", item.before))
+                out.append(new_record("delete", "exception_event", item.before))
 
     return out
 
@@ -177,17 +167,17 @@ keyed_joined_events = op.join("join_actions", keyed_events, actions, emit_mode="
 # op.inspect("inspect_keyed_joined_events", keyed_joined_events)
 
 
-def flat_requests(item: tuple[UserEvent | None, EventCampaignState | None]) -> list[ActionBasedCampaignTrigger]:
+def flat_requests(item: tuple[UserEvent | None, EventCampaignState | None]) -> list[CampaignTrigger]:
     # join 된 tuple 중 유효한 것만 살리고, 하나로 merge 한다.
     event, action = item
     if (event is None) or (action is None):
         return []
 
-    # TODO: UserEvent가 오래되었으면 skip
+    # TODO: campaign state가 변경된 경우에는 skip 할 수 있을까?
 
     def create_requests(_type: CampaignEventType):
         return [
-            ActionBasedCampaignTrigger(
+            CampaignTrigger(
                 type=_type,
                 campaign_id=campaign_id,
                 user_id=event.user_id,
@@ -202,4 +192,4 @@ keyed_requests = op.flat_map_value("flat_requests", keyed_joined_events, flat_re
 # op.inspect("inspect_keyed_requests", keyed_requests)
 requests = op.key_rm("unkey_requests", keyed_requests)
 # op.inspect("inspect_requests", requests)
-op.output("sink_to_executor", requests, sink=CampaignSchedulerSink())
+op.output("sink_to_executor", requests, sink=CampaignServiceSink())
