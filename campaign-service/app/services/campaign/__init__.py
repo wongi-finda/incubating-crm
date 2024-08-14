@@ -6,6 +6,8 @@ from app.schemas.campaign import (
     ScheduledDeliveryCampaign, ActionBasedDeliveryCampaign, CampaignStatus
 )
 from app.services.schedule import ScheduleService
+from app.services.campaign.evaluators.user import UserEvaluator
+from app.services.campaign.evaluators.event import EventPropertyEvaluator
 
 Campaign = ScheduledDeliveryCampaign | ActionBasedDeliveryCampaign
 
@@ -14,6 +16,9 @@ class CampaignService:
     def __init__(self, schedule_service: ScheduleService):
         self.schedule_service = schedule_service
         self.collection: Collection[Campaign] = db.campaign
+
+        self.user_evaluator = UserEvaluator()
+        self.event_property_evaluator = EventPropertyEvaluator()
 
     def make_active(self, campaign: Campaign):
         # Make state 'active'
@@ -39,13 +44,13 @@ class CampaignService:
         })
 
         for campaign in trigger_campaigns:
-            # TODO: property filters
-            property_filters = campaign["trigger_action"]["property_filters"]
-            if property_filters:
-                ...
+            # Evaluate qualifications
+            if not self.event_property_evaluator.evaluate(campaign, event):
+                continue
+            if not self.user_evaluator.evaluate(campaign, event.user_id):
+                continue
 
-            # TODO: Evaluate user is qualified
-
+            # Schedule the delivery
             if not self.schedule_service.exists(campaign=campaign, user_id=event.user_id):
                 self.schedule_service.add_action_based_delivery(
                     callback=_deliver_action_based_campaign,
@@ -61,6 +66,7 @@ class CampaignService:
         })
 
         for campaign in exception_campaigns:
+            # Unschedule the delivery
             if self.schedule_service.exists(campaign=campaign, user_id=event.user_id):
                 self.schedule_service.remove(
                     campaign=campaign,
