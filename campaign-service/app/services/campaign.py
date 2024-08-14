@@ -1,7 +1,7 @@
 from pymongo.collection import Collection
 
-from pb.campaign_service_pb2 import UserEvent
 from app.db.mongo import db
+from app.models import UserEvent
 from app.schemas.campaign import (
     ScheduledDeliveryCampaign, ActionBasedDeliveryCampaign, CampaignStatus
 )
@@ -35,7 +35,7 @@ class CampaignService:
             "status": CampaignStatus.active,
             "delivery_type": "action-based",
             "trigger_action.type": "event-trigger",
-            "trigger_action.trigger_event": event.event,
+            "trigger_action.trigger_event": event.event_name,
         })
 
         for campaign in trigger_campaigns:
@@ -57,7 +57,7 @@ class CampaignService:
         exception_campaigns = self.collection.find({
             "status": CampaignStatus.active,
             "delivery_type": "action-based",
-            "exception_event": event.event,
+            "exception_event": event.event_name,
         })
 
         for campaign in exception_campaigns:

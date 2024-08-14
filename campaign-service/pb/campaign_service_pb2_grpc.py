@@ -41,8 +41,8 @@ class CampaignStub(object):
         """
         self.NotifyUserEvent = channel.unary_unary(
                 '/scheduler.Campaign/NotifyUserEvent',
-                request_serializer=campaign__service__pb2.UserEvent.SerializeToString,
-                response_deserializer=campaign__service__pb2.Response.FromString,
+                request_serializer=campaign__service__pb2.UserEventMessage.SerializeToString,
+                response_deserializer=campaign__service__pb2.ResponseMessage.FromString,
                 _registered_method=True)
 
 
@@ -60,8 +60,8 @@ def add_CampaignServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'NotifyUserEvent': grpc.unary_unary_rpc_method_handler(
                     servicer.NotifyUserEvent,
-                    request_deserializer=campaign__service__pb2.UserEvent.FromString,
-                    response_serializer=campaign__service__pb2.Response.SerializeToString,
+                    request_deserializer=campaign__service__pb2.UserEventMessage.FromString,
+                    response_serializer=campaign__service__pb2.ResponseMessage.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -89,8 +89,8 @@ class Campaign(object):
             request,
             target,
             '/scheduler.Campaign/NotifyUserEvent',
-            campaign__service__pb2.UserEvent.SerializeToString,
-            campaign__service__pb2.Response.FromString,
+            campaign__service__pb2.UserEventMessage.SerializeToString,
+            campaign__service__pb2.ResponseMessage.FromString,
             options,
             channel_credentials,
             insecure,

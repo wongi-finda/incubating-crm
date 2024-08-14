@@ -2,14 +2,14 @@ from bytewax.outputs import StatelessSinkPartition, DynamicSink
 import grpc
 
 from pb.campaign_service_pb2_grpc import CampaignStub
-from pb.campaign_service_pb2 import UserEvent
+from pb.campaign_service_pb2 import UserEventMessage
 
 
-class _CampaignServiceSinkPartition(StatelessSinkPartition[UserEvent]):
+class _CampaignServiceSinkPartition(StatelessSinkPartition[UserEventMessage]):
     def __init__(self, stub: CampaignStub):
         self.stub = stub
 
-    def write_batch(self, items: list[UserEvent]) -> None:
+    def write_batch(self, items: list[UserEventMessage]) -> None:
         for item in items:
             res = self.stub.NotifyUserEvent(item)
             print(res)

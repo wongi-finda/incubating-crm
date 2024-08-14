@@ -1,18 +1,32 @@
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar, Optional as _Optional
+from typing import ClassVar as _ClassVar, Mapping as _Mapping, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
-class UserEvent(_message.Message):
-    __slots__ = ("event", "user_id")
-    EVENT_FIELD_NUMBER: _ClassVar[int]
-    USER_ID_FIELD_NUMBER: _ClassVar[int]
-    event: str
-    user_id: int
-    def __init__(self, event: _Optional[str] = ..., user_id: _Optional[int] = ...) -> None: ...
+class JsonSerialized(_message.Message):
+    __slots__ = ("json",)
+    JSON_FIELD_NUMBER: _ClassVar[int]
+    json: str
+    def __init__(self, json: _Optional[str] = ...) -> None: ...
 
-class Response(_message.Message):
+class UserEventMessage(_message.Message):
+    __slots__ = ("user_id", "event_data")
+    USER_ID_FIELD_NUMBER: _ClassVar[int]
+    EVENT_DATA_FIELD_NUMBER: _ClassVar[int]
+    user_id: int
+    event_data: JsonSerialized
+    def __init__(self, user_id: _Optional[int] = ..., event_data: _Optional[_Union[JsonSerialized, _Mapping]] = ...) -> None: ...
+
+class UserAttributeMessage(_message.Message):
+    __slots__ = ("user_id", "attribute_data")
+    USER_ID_FIELD_NUMBER: _ClassVar[int]
+    ATTRIBUTE_DATA_FIELD_NUMBER: _ClassVar[int]
+    user_id: int
+    attribute_data: JsonSerialized
+    def __init__(self, user_id: _Optional[int] = ..., attribute_data: _Optional[_Union[JsonSerialized, _Mapping]] = ...) -> None: ...
+
+class ResponseMessage(_message.Message):
     __slots__ = ("success", "reason")
     SUCCESS_FIELD_NUMBER: _ClassVar[int]
     REASON_FIELD_NUMBER: _ClassVar[int]

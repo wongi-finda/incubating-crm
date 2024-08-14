@@ -4,15 +4,24 @@ package scheduler;
 
 
 service Campaign {
-    rpc NotifyUserEvent (UserEvent) returns (Response);
+    rpc NotifyUserEvent (UserEventMessage) returns (ResponseMessage);
 }
 
-message UserEvent {
-    string event = 1;
-    int64 user_id = 2;
+message JsonSerialized {
+    string json = 1;
 }
 
-message Response {
+message UserEventMessage {
+    int64 user_id = 1;
+    JsonSerialized event_data = 2;      // Includes event name and event properties(map)
+}
+
+message UserAttributeMessage {
+    int64 user_id = 1;
+    JsonSerialized attribute_data = 2;  // Includes attribute name and attribute value
+}
+
+message ResponseMessage {
     bool success = 1;
     string reason = 2;
 }

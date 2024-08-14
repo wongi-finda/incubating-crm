@@ -1,4 +1,4 @@
-from typing import Generic, Literal, TypeVar
+from typing import Any, Generic, Literal, TypeVar
 
 from pydantic import BaseModel
 
@@ -14,6 +14,7 @@ class Campaign(BaseModel):
 class UserEventData(BaseModel):
     user_id: int
     event_name: str
+    event_properties: dict[str, Any] = {}
 
 
 class ChangeData(BaseModel, Generic[DataT]):

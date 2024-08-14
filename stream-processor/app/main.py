@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from operator import attrgetter
+import json
 from typing import Literal
 
 from bytewax.dataflow import Dataflow
@@ -13,7 +14,7 @@ from app.model import (
     CampaignEventType,
 )
 from app.sink import CampaignServiceSink
-from pb.campaign_service_pb2 import UserEvent
+from pb.campaign_service_pb2 import UserEventMessage
 
 flow = Dataflow("crm")
 
@@ -155,13 +156,13 @@ event_in_use_stream = op.stateful_map("stateful_triggers", keyed_cdc, mapper)
 # 5. Sink to scheduler
 # 참고: 발송 완료 이벤트도 같이 들어온다. state 유지 시 사용
 events_data = [
-    UserEventData(event_name="event_A", user_id=1),
-    UserEventData(event_name="event_A", user_id=1),
-    UserEventData(event_name="event_A", user_id=1),
-    UserEventData(event_name="event_A", user_id=1),
-    UserEventData(event_name="event_A", user_id=1),
-    UserEventData(event_name="event_A", user_id=1),
-    UserEventData(event_name="event_A", user_id=1),
+    UserEventData(user_id=1, event_name="event_A"),
+    UserEventData(user_id=1, event_name="event_A"),
+    UserEventData(user_id=1, event_name="event_A"),
+    UserEventData(user_id=1, event_name="event_A"),
+    UserEventData(user_id=1, event_name="event_A"),
+    UserEventData(user_id=1, event_name="event_A"),
+    UserEventData(user_id=1, event_name="event_A"),
 ]
 events = op.input("events", flow, TestingSource(events_data))
 
@@ -171,10 +172,18 @@ keyed_joined_events = op.join("join_actions", keyed_events, event_in_use_stream,
 # op.inspect("inspect_keyed_joined_events", keyed_joined_events)
 
 
-def as_campaign_service_request(item: tuple[UserEventData | None, bool | None]) -> UserEvent | None:
+def as_campaign_service_request(item: tuple[UserEventData | None, bool | None]) -> UserEventMessage | None:
     event, in_use = item
     if (event is not None) and (in_use is True):
-        return UserEvent(event=event.event_name, user_id=event.user_id)
+        return UserEventMessage(
+            user_id=event.user_id,
+            event_data={
+                "json": json.dumps({
+                    "event_name": event.event_name,
+                    "event_properties": event.event_properties,
+                }),
+            },
+        )
 
 
 keyed_requests = op.filter_map_value("filter_value", keyed_joined_events, as_campaign_service_request)
