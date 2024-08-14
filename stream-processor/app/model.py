@@ -11,7 +11,7 @@ class Campaign(BaseModel):
     exception_event: str | None
 
 
-class UserEvent(BaseModel):
+class UserEventData(BaseModel):
     user_id: int
     event_name: str
 
@@ -27,7 +27,7 @@ CampaignChangeData = ChangeData[Campaign]
 CampaignEventType = Literal["trigger_event", "exception_event"]
 
 
-class CampaignTrigger(BaseModel):
-    type: CampaignEventType
-    campaign_id: int
-    user_id: int
+# class CampaignTrigger(BaseModel):
+#     type: CampaignEventType
+#     campaign_id: int
+#     user_id: int

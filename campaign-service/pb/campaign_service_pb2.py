@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16\x63\x61mpaign_service.proto\x12\tscheduler\"+\n\tUserEvent\x12\r\n\x05\x65vent\x18\x01 \x01(\t\x12\x0f\n\x07user_id\x18\x02 \x01(\x03\"+\n\x08Response\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0e\n\x06reason\x18\x02 \x01(\t2O\n\x0f\x43\x61mpaignService\x12<\n\x0fNotifyUserEvent\x12\x14.scheduler.UserEvent\x1a\x13.scheduler.Responseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16\x63\x61mpaign_service.proto\x12\tscheduler\"+\n\tUserEvent\x12\r\n\x05\x65vent\x18\x01 \x01(\t\x12\x0f\n\x07user_id\x18\x02 \x01(\x03\"+\n\x08Response\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0e\n\x06reason\x18\x02 \x01(\t2H\n\x08\x43\x61mpaign\x12<\n\x0fNotifyUserEvent\x12\x14.scheduler.UserEvent\x1a\x13.scheduler.Responseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -25,6 +25,6 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_USEREVENT']._serialized_end=80
   _globals['_RESPONSE']._serialized_start=82
   _globals['_RESPONSE']._serialized_end=125
-  _globals['_CAMPAIGNSERVICE']._serialized_start=127
-  _globals['_CAMPAIGNSERVICE']._serialized_end=206
+  _globals['_CAMPAIGN']._serialized_start=127
+  _globals['_CAMPAIGN']._serialized_end=199
 # @@protoc_insertion_point(module_scope)

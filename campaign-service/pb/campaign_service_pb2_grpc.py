@@ -30,7 +30,7 @@ if _version_not_supported:
     )
 
 
-class CampaignServiceStub(object):
+class CampaignStub(object):
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -40,13 +40,13 @@ class CampaignServiceStub(object):
             channel: A grpc.Channel.
         """
         self.NotifyUserEvent = channel.unary_unary(
-                '/scheduler.CampaignService/NotifyUserEvent',
+                '/scheduler.Campaign/NotifyUserEvent',
                 request_serializer=campaign__service__pb2.UserEvent.SerializeToString,
                 response_deserializer=campaign__service__pb2.Response.FromString,
                 _registered_method=True)
 
 
-class CampaignServiceServicer(object):
+class CampaignServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def NotifyUserEvent(self, request, context):
@@ -56,7 +56,7 @@ class CampaignServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
 
-def add_CampaignServiceServicer_to_server(servicer, server):
+def add_CampaignServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'NotifyUserEvent': grpc.unary_unary_rpc_method_handler(
                     servicer.NotifyUserEvent,
@@ -65,13 +65,13 @@ def add_CampaignServiceServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'scheduler.CampaignService', rpc_method_handlers)
+            'scheduler.Campaign', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('scheduler.CampaignService', rpc_method_handlers)
+    server.add_registered_method_handlers('scheduler.Campaign', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
-class CampaignService(object):
+class Campaign(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
@@ -88,7 +88,7 @@ class CampaignService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/scheduler.CampaignService/NotifyUserEvent',
+            '/scheduler.Campaign/NotifyUserEvent',
             campaign__service__pb2.UserEvent.SerializeToString,
             campaign__service__pb2.Response.FromString,
             options,

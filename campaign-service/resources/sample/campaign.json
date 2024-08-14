@@ -1,0 +1,21 @@
+{
+  "name": "Campaign for test",
+  "status": "active",
+  "channel": "push",
+  "delivery_type": "action-based",
+  "trigger_action": {
+    "type": "event-trigger",
+    "trigger_event": "event_A",
+    "property_filters": null
+  },
+  "delay": 5,
+  "exception_event": null,
+  "start_time": "2024-01-01 00:00:00",
+  "end_time": null,
+  "re_eligible": null,
+  "target": {
+    "target_segment_ids": [],
+    "additional_filters": null
+  },
+  "re_eval_before_send": true
+}

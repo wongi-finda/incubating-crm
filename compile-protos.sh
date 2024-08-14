@@ -1,6 +1,6 @@
 projects=(
   "stream-processor"
-  "campaign-scheduler"
+  "campaign-service"
 )
 
 for project in "${projects[@]}"

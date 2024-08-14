@@ -3,7 +3,7 @@ syntax = "proto3";
 package scheduler;
 
 
-service CampaignService {
+service Campaign {
     rpc NotifyUserEvent (UserEvent) returns (Response);
 }
 

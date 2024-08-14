@@ -8,12 +8,12 @@ from bytewax.testing import TestingSource
 
 from app.model import (
     Campaign,
-    UserEvent,
+    UserEventData,
     CampaignChangeData,
     CampaignEventType,
-    CampaignTrigger,
 )
 from app.sink import CampaignServiceSink
+from pb.campaign_service_pb2 import UserEvent
 
 flow = Dataflow("crm")
 
@@ -54,9 +54,6 @@ campaign_cdc_data = [
     ),
 ]
 campaign_change_stream = op.input("campaigns", flow, TestingSource(campaign_cdc_data))
-
-
-# TODO: 더 심플하게 하려면 관심있는 이벤트들만 set으로 관리하고 필터링 된 유저 이벤트만 스케쥴러로 보낸다.
 
 
 @dataclass
@@ -115,11 +112,13 @@ keyed_cdc = op.key_on("keyed_cdc", flatten_campaign_cdc, attrgetter("event"))
 # op.inspect("inspect_keyed_cdc", keyed_cdc)
 
 
-class EventCampaignState(dict[CampaignEventType, set[int]]):
-    def __init__(self):
+class EventState(dict[CampaignEventType, set[int]]):
+    def __init__(self, event: str):
         super().__init__()
+        self.event = event
         self["trigger_event"] = set[int]()
         self["exception_event"] = set[int]()
+        self.in_use = self._check_in_use()
 
     def apply(self, record: CampaignTriggerChangeRecord) -> None:
         match record:
@@ -128,18 +127,23 @@ class EventCampaignState(dict[CampaignEventType, set[int]]):
             case CampaignTriggerChangeRecord(op="delete", type=_type, campaign_id=campaign_id):
                 self[_type].remove(campaign_id)
 
+        self.in_use = self._check_in_use()
+
+    def _check_in_use(self) -> bool:
+        return bool(self["trigger_event"]) or bool(self["exception_event"])
+
 
 def mapper(
-        state: EventCampaignState | None,
+        state: EventState | None,
         value: CampaignTriggerChangeRecord,
-) -> tuple[EventCampaignState | None, EventCampaignState]:
+) -> tuple[EventState | None, bool]:
     if state is None:
-        state = EventCampaignState()
+        state = EventState(value.event)
     state.apply(value)
-    return state, state
+    return state, state.in_use
 
 
-actions = op.stateful_map("stateful_triggers", keyed_cdc, mapper)
+event_in_use_stream = op.stateful_map("stateful_triggers", keyed_cdc, mapper)
 # op.inspect("inspect_actions", actions)
 
 
@@ -151,45 +155,59 @@ actions = op.stateful_map("stateful_triggers", keyed_cdc, mapper)
 # 5. Sink to scheduler
 # 참고: 발송 완료 이벤트도 같이 들어온다. state 유지 시 사용
 events_data = [
-    UserEvent(event_name="event_A", user_id=1),
-    UserEvent(event_name="event_A", user_id=1),
-    UserEvent(event_name="event_A", user_id=1),
-    UserEvent(event_name="event_A", user_id=1),
-    UserEvent(event_name="event_A", user_id=1),
-    UserEvent(event_name="event_A", user_id=1),
-    UserEvent(event_name="event_A", user_id=1),
+    UserEventData(event_name="event_A", user_id=1),
+    UserEventData(event_name="event_A", user_id=1),
+    UserEventData(event_name="event_A", user_id=1),
+    UserEventData(event_name="event_A", user_id=1),
+    UserEventData(event_name="event_A", user_id=1),
+    UserEventData(event_name="event_A", user_id=1),
+    UserEventData(event_name="event_A", user_id=1),
 ]
 events = op.input("events", flow, TestingSource(events_data))
 
 # TODO: 추후에 running join이 아닌 enrich_cached 방식을 고려해보자.
 keyed_events = op.key_on("key_on_events", events, attrgetter("event_name"))
-keyed_joined_events = op.join("join_actions", keyed_events, actions, emit_mode="running")
+keyed_joined_events = op.join("join_actions", keyed_events, event_in_use_stream, emit_mode="running")
 # op.inspect("inspect_keyed_joined_events", keyed_joined_events)
 
 
-def flat_requests(item: tuple[UserEvent | None, EventCampaignState | None]) -> list[CampaignTrigger]:
-    # join 된 tuple 중 유효한 것만 살리고, 하나로 merge 한다.
-    event, action = item
-    if (event is None) or (action is None):
-        return []
-
-    # TODO: campaign state가 변경된 경우에는 skip 할 수 있을까?
-
-    def create_requests(_type: CampaignEventType):
-        return [
-            CampaignTrigger(
-                type=_type,
-                campaign_id=campaign_id,
-                user_id=event.user_id,
-            )
-            for campaign_id in action[_type]
-        ]
-
-    return create_requests("trigger_event") + create_requests("exception_event")
+def as_campaign_service_request(item: tuple[UserEventData | None, bool | None]) -> UserEvent | None:
+    event, in_use = item
+    if (event is not None) and (in_use is True):
+        return UserEvent(event=event.event_name, user_id=event.user_id)
 
 
-keyed_requests = op.flat_map_value("flat_requests", keyed_joined_events, flat_requests)
+keyed_requests = op.filter_map_value("filter_value", keyed_joined_events, as_campaign_service_request)
 # op.inspect("inspect_keyed_requests", keyed_requests)
+
 requests = op.key_rm("unkey_requests", keyed_requests)
 # op.inspect("inspect_requests", requests)
+
 op.output("sink_to_executor", requests, sink=CampaignServiceSink())
+
+# def flat_requests(item: tuple[UserEvent | None, EventState | None]) -> list[CampaignTrigger]:
+#     # join 된 tuple 중 유효한 것만 살리고, 하나로 merge 한다.
+#     event, action = item
+#     if (event is None) or (action is None):
+#         return []
+#
+#     # TODO: campaign state가 변경된 경우에는 skip 할 수 있을까?
+#
+#     def create_requests(_type: CampaignEventType):
+#         return [
+#             CampaignTrigger(
+#                 type=_type,
+#                 campaign_id=campaign_id,
+#                 user_id=event.user_id,
+#             )
+#             for campaign_id in action[_type]
+#         ]
+#
+#     return create_requests("trigger_event") + create_requests("exception_event")
+#
+#
+# keyed_requests = op.flat_map_value("flat_requests", keyed_joined_events, flat_requests)
+# # op.inspect("inspect_keyed_requests", keyed_requests)
+# requests = op.key_rm("unkey_requests", keyed_requests)
+# # op.inspect("inspect_requests", requests)
+# op.output("sink_to_executor", requests, sink=CampaignServiceSink())
