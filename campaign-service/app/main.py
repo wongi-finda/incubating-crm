@@ -4,8 +4,9 @@ import grpc
 
 from pb.campaign_service_pb2_grpc import add_CampaignServicer_to_server
 from app.routers.campaign import CampaignRouter
-from app.services.schedule import ScheduleService
 from app.services.campaign import CampaignService
+from app.services.schedule import ScheduleService
+from app.services.messaging import MessagingService
 
 
 def serve():
@@ -15,8 +16,10 @@ def serve():
 
     # Create services
     schedule_service = ScheduleService()
+    messaging_service = MessagingService()
     campaign_service = CampaignService(
         schedule_service=schedule_service,
+        messaging_service=messaging_service,
     )
 
     # Add router(servicer)s to the server

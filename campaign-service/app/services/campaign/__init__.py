@@ -1,11 +1,12 @@
 from pymongo.collection import Collection
 
 from app.db.mongo import db
-from app.models import UserEvent
+from app.models import UserEvent, UserAttribute
 from app.schemas.campaign import (
     ScheduledDeliveryCampaign, ActionBasedDeliveryCampaign, CampaignStatus
 )
 from app.services.schedule import ScheduleService
+from app.services.messaging import MessagingService
 from app.services.campaign.evaluators.user import UserEvaluator
 from app.services.campaign.evaluators.event import EventPropertyEvaluator
 
@@ -13,26 +14,32 @@ Campaign = ScheduledDeliveryCampaign | ActionBasedDeliveryCampaign
 
 
 class CampaignService:
-    def __init__(self, schedule_service: ScheduleService):
-        self.schedule_service = schedule_service
+    def __init__(
+            self,
+            schedule_service: ScheduleService,
+            messaging_service: MessagingService,
+    ):
         self.collection: Collection[Campaign] = db.campaign
+
+        self.schedule_service = schedule_service
+        self.messaging_service = messaging_service
 
         self.user_evaluator = UserEvaluator()
         self.event_property_evaluator = EventPropertyEvaluator()
 
-    def make_active(self, campaign: Campaign):
-        # Make state 'active'
-        self.collection.update_one(
-            filter={"_id": campaign["_id"]},
-            update={"$set": {"status": CampaignStatus.active}},
-        )
-
-        # Trigger scheduled delivery campaign
-        if isinstance(campaign, ScheduledDeliveryCampaign):
-            self.schedule_service.add_scheduled_delivery(
-                callback=_deliver_scheduled_campaign,
-                campaign=campaign,
-            )
+    # def set_active(self, campaign: Campaign):
+    #     # Make state 'active'
+    #     self.collection.update_one(
+    #         filter={"_id": campaign["_id"]},
+    #         update={"$set": {"status": CampaignStatus.active}},
+    #     )
+    #
+    #     # Trigger scheduled delivery campaign
+    #     if isinstance(campaign, ScheduledDeliveryCampaign):
+    #         self.schedule_service.add_scheduled_delivery(
+    #             callback=self._deliver_scheduled_campaign,
+    #             campaign=campaign,
+    #         )
 
     def handle_user_event(self, event: UserEvent) -> None:
         # Find trigger campaigns
@@ -51,11 +58,11 @@ class CampaignService:
                 continue
 
             # Schedule the delivery
-            if not self.schedule_service.exists(campaign=campaign, user_id=event.user_id):
+            if not self.schedule_service.exists(campaign=campaign, action=event):
                 self.schedule_service.add_action_based_delivery(
-                    callback=_deliver_action_based_campaign,
+                    callback=self._deliver_event_triggered_campaign,
                     campaign=campaign,
-                    user_id=event.user_id,
+                    action=event,
                 )
 
         # Find exception campaigns
@@ -67,58 +74,56 @@ class CampaignService:
 
         for campaign in exception_campaigns:
             # Unschedule the delivery
-            if self.schedule_service.exists(campaign=campaign, user_id=event.user_id):
+            if self.schedule_service.exists(campaign=campaign, action=event):
                 self.schedule_service.remove(
                     campaign=campaign,
-                    user_id=event.user_id,
+                    action=event,
                 )
 
-    def handle_user_attribute(self):
-        ...
+    def handle_user_attribute(self, attr: UserAttribute):
+        # Find trigger campaigns
+        trigger_campaigns = self.collection.find({
+            "status": CampaignStatus.active,
+            "delivery_type": "action-based",
+            "trigger_action.type": "attribute-trigger",
+            "trigger_action.trigger_event": attr.attribute_name,
+        })
 
-    def launch(self, campaign: Campaign, **kwargs):
+        for campaign in trigger_campaigns:
+            # Evaluate qualifications
+            if not self.user_evaluator.evaluate(campaign, attr.user_id):
+                continue
+
+            # Schedule the delivery
+            if not self.schedule_service.exists(campaign=campaign, action=attr):
+                self.schedule_service.add_action_based_delivery(
+                    callback=self._deliver_attribute_triggered_campaign,
+                    campaign=campaign,
+                    action=attr,
+                )
+
+    def _deliver_scheduled_campaign(
+            self,
+            campaign: ScheduledDeliveryCampaign,
+    ) -> None:
         campaign_id = campaign["_id"]
 
-        match campaign:
-            case ScheduledDeliveryCampaign():
-                assert campaign["delivery_type"] == "scheduled"
+        # TODO: implement me
+        print(f"Deliver scheduled delivery campaign[{campaign_id}]")
 
-                self.schedule_service.add_scheduled_delivery(
-                    callback=_deliver_scheduled_campaign,
-                    campaign=campaign,
-                )
+    def _deliver_event_triggered_campaign(
+            self,
+            campaign: ActionBasedDeliveryCampaign,
+            event: UserEvent,
+    ) -> None:
+        # TODO: Re-evaluate segment membership at send-time
 
-            case ActionBasedDeliveryCampaign():
-                assert campaign["delivery_type"] == "scheduled"
+        campaign_id = campaign["_id"]
+        print(f"Deliver action-based delivery campaign[{campaign_id}](user_id={event.user_id})")
 
-                user_id = kwargs.get("user_id")
-                if not user_id:
-                    print(f"ERROR:  Try to launch action-based campaign[{campaign_id}] without user-id.")
-                    raise RuntimeError()
-
-                self.schedule_service.add_action_based_delivery(
-                    callback=_deliver_action_based_campaign,
-                    campaign=campaign,
-                    user_id=user_id,
-                )
-
-            case _:
-                delivery_type = campaign["delivery_type"]
-                print(f"ERROR:  Invalid campaign[{campaign_id}] delivery type [{delivery_type}].")
-
-
-def _deliver_scheduled_campaign(campaign: ScheduledDeliveryCampaign) -> None:
-    campaign_id = campaign["_id"]
-    print(f"Deliver scheduled delivery campaign[{campaign_id}]")
-
-
-def _deliver_action_based_campaign(
-        campaign: ActionBasedDeliveryCampaign,
-        user_id: int,
-) -> None:
-    # Re-evaluate segment membership at send-time
-    if campaign["re_eval_before_send"] and campaign["delay"]:
+    def _deliver_attribute_triggered_campaign(
+            self,
+            campaign: ActionBasedDeliveryCampaign,
+            attr: UserAttribute,
+    ) -> None:
         ...
-
-    campaign_id = campaign["_id"]
-    print(f"Deliver action-based delivery campaign[{campaign_id}]({user_id=})")

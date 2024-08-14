@@ -16,8 +16,8 @@ class CampaignStatus(StrEnum):
 
 
 class CampaignChannel(StrEnum):
-    push = auto()
-    kakao = auto()
+    noti_10000 = auto()  # 금명보 알림 via mobile push
+    noti_10001 = auto()  # 금명보 알림 via 카카오 알림톡
 
 
 class CampaignSchedule(TypedDict):

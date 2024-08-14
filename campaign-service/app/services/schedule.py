@@ -8,12 +8,14 @@ from apscheduler.triggers.date import DateTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 import pendulum
 
+from app.models import UserEvent, UserAttribute
 from app.schemas.campaign import (
-    ScheduledDeliveryCampaign, ActionBasedDeliveryCampaign, Delay,
+    ScheduledDeliveryCampaign, ActionBasedDeliveryCampaign,
 )
 
+UserAction = UserEvent | UserAttribute
 ScheduledDeliveryCallback = Callable[[ScheduledDeliveryCampaign], None]
-ActionBasedDeliveryCallback = Callable[[ActionBasedDeliveryCampaign, int], None]
+ActionBasedDeliveryCallback = Callable[[ActionBasedDeliveryCampaign, UserAction], None]
 
 timezone = "Asia/Seoul"
 
@@ -87,7 +89,7 @@ class ScheduleService:
             self,
             callback: ActionBasedDeliveryCallback,
             campaign: ActionBasedDeliveryCampaign,
-            user_id: int,
+            action: UserAction,
     ) -> None:
         now = pendulum.now(tz=timezone)
 
@@ -107,11 +109,11 @@ class ScheduleService:
             case _:
                 trigger = None
 
-        job_id = self._job_id(campaign, user_id)
+        job_id = self._job_id(campaign, action)
         self._scheduler.add_job(
             func=callback,
             trigger=trigger,
-            args=[campaign, user_id],
+            args=[campaign, action],
             id=job_id,
         )
 
@@ -120,15 +122,15 @@ class ScheduleService:
         ...
 
     @overload
-    def exists(self, campaign: ActionBasedDeliveryCampaign, user_id: int) -> bool:
+    def exists(self, campaign: ActionBasedDeliveryCampaign, action: UserAction) -> bool:
         ...
 
     def exists(
             self,
             campaign: ScheduledDeliveryCampaign | ActionBasedDeliveryCampaign,
-            user_id: int | None = None,
+            action: UserAction | None = None,
     ) -> bool:
-        job_id = self._job_id(campaign, user_id)
+        job_id = self._job_id(campaign, action)
         return self._scheduler.get_job(job_id) is not None
 
     @overload
@@ -136,23 +138,23 @@ class ScheduleService:
         ...
 
     @overload
-    def remove(self, campaign: ActionBasedDeliveryCampaign, user_id: int) -> None:
+    def remove(self, campaign: ActionBasedDeliveryCampaign, action: UserAction) -> None:
         ...
 
     def remove(
             self,
             campaign: ScheduledDeliveryCampaign | ActionBasedDeliveryCampaign,
-            user_id: int | None = None,
+            action: UserAction | None = None,
     ) -> None:
-        job_id = self._job_id(campaign, user_id)
+        job_id = self._job_id(campaign, action)
         self._scheduler.remove_job(job_id)
 
     @staticmethod
     def _job_id(
             campaign: ScheduledDeliveryCampaign | ActionBasedDeliveryCampaign,
-            user_id: int | None = None,
+            action: UserAction | None = None,
     ):
         job_id = str(campaign["_id"])
-        if user_id is not None:
-            job_id = f"{job_id}:{user_id}"
+        if action is not None:
+            job_id = f"{job_id}:{action.user_id}"
         return job_id
