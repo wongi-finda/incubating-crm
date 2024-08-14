@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16\x63\x61mpaign_service.proto\x12\tscheduler\"\x1e\n\x0eJsonSerialized\x12\x0c\n\x04json\x18\x01 \x01(\t\"R\n\x10UserEventMessage\x12\x0f\n\x07user_id\x18\x01 \x01(\x03\x12-\n\nevent_data\x18\x02 \x01(\x0b\x32\x19.scheduler.JsonSerialized\"Z\n\x14UserAttributeMessage\x12\x0f\n\x07user_id\x18\x01 \x01(\x03\x12\x31\n\x0e\x61ttribute_data\x18\x02 \x01(\x0b\x32\x19.scheduler.JsonSerialized\"2\n\x0fResponseMessage\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0e\n\x06reason\x18\x02 \x01(\t2V\n\x08\x43\x61mpaign\x12J\n\x0fNotifyUserEvent\x12\x1b.scheduler.UserEventMessage\x1a\x1a.scheduler.ResponseMessageb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16\x63\x61mpaign_service.proto\x12\tscheduler\"\x1e\n\x0eJsonSerialized\x12\x0c\n\x04json\x18\x01 \x01(\t\"R\n\x10UserEventMessage\x12\x0f\n\x07user_id\x18\x01 \x01(\x03\x12-\n\nevent_data\x18\x02 \x01(\x0b\x32\x19.scheduler.JsonSerialized\"Z\n\x14UserAttributeMessage\x12\x0f\n\x07user_id\x18\x01 \x01(\x03\x12\x31\n\x0e\x61ttribute_data\x18\x02 \x01(\x0b\x32\x19.scheduler.JsonSerialized\"+\n\x08Response\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0e\n\x06reason\x18\x02 \x01(\t2\xaa\x01\n\x08\x43\x61mpaign\x12J\n\x16NotifyUserEventEmitted\x12\x1b.scheduler.UserEventMessage\x1a\x13.scheduler.Response\x12R\n\x1aNotifyUserAttributeChanged\x12\x1f.scheduler.UserAttributeMessage\x1a\x13.scheduler.Responseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -27,8 +27,8 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_USEREVENTMESSAGE']._serialized_end=151
   _globals['_USERATTRIBUTEMESSAGE']._serialized_start=153
   _globals['_USERATTRIBUTEMESSAGE']._serialized_end=243
-  _globals['_RESPONSEMESSAGE']._serialized_start=245
-  _globals['_RESPONSEMESSAGE']._serialized_end=295
-  _globals['_CAMPAIGN']._serialized_start=297
-  _globals['_CAMPAIGN']._serialized_end=383
+  _globals['_RESPONSE']._serialized_start=245
+  _globals['_RESPONSE']._serialized_end=288
+  _globals['_CAMPAIGN']._serialized_start=291
+  _globals['_CAMPAIGN']._serialized_end=461
 # @@protoc_insertion_point(module_scope)

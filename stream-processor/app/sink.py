@@ -11,7 +11,7 @@ class _CampaignServiceSinkPartition(StatelessSinkPartition[UserEventMessage]):
 
     def write_batch(self, items: list[UserEventMessage]) -> None:
         for item in items:
-            res = self.stub.NotifyUserEvent(item)
+            res = self.stub.NotifyUserEventEmitted(item)
             print(res)
 
 

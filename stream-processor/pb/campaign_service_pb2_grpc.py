@@ -39,17 +39,28 @@ class CampaignStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.NotifyUserEvent = channel.unary_unary(
-                '/scheduler.Campaign/NotifyUserEvent',
+        self.NotifyUserEventEmitted = channel.unary_unary(
+                '/scheduler.Campaign/NotifyUserEventEmitted',
                 request_serializer=campaign__service__pb2.UserEventMessage.SerializeToString,
-                response_deserializer=campaign__service__pb2.ResponseMessage.FromString,
+                response_deserializer=campaign__service__pb2.Response.FromString,
+                _registered_method=True)
+        self.NotifyUserAttributeChanged = channel.unary_unary(
+                '/scheduler.Campaign/NotifyUserAttributeChanged',
+                request_serializer=campaign__service__pb2.UserAttributeMessage.SerializeToString,
+                response_deserializer=campaign__service__pb2.Response.FromString,
                 _registered_method=True)
 
 
 class CampaignServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def NotifyUserEvent(self, request, context):
+    def NotifyUserEventEmitted(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def NotifyUserAttributeChanged(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -58,10 +69,15 @@ class CampaignServicer(object):
 
 def add_CampaignServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'NotifyUserEvent': grpc.unary_unary_rpc_method_handler(
-                    servicer.NotifyUserEvent,
+            'NotifyUserEventEmitted': grpc.unary_unary_rpc_method_handler(
+                    servicer.NotifyUserEventEmitted,
                     request_deserializer=campaign__service__pb2.UserEventMessage.FromString,
-                    response_serializer=campaign__service__pb2.ResponseMessage.SerializeToString,
+                    response_serializer=campaign__service__pb2.Response.SerializeToString,
+            ),
+            'NotifyUserAttributeChanged': grpc.unary_unary_rpc_method_handler(
+                    servicer.NotifyUserAttributeChanged,
+                    request_deserializer=campaign__service__pb2.UserAttributeMessage.FromString,
+                    response_serializer=campaign__service__pb2.Response.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -75,7 +91,7 @@ class Campaign(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def NotifyUserEvent(request,
+    def NotifyUserEventEmitted(request,
             target,
             options=(),
             channel_credentials=None,
@@ -88,9 +104,36 @@ class Campaign(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/scheduler.Campaign/NotifyUserEvent',
+            '/scheduler.Campaign/NotifyUserEventEmitted',
             campaign__service__pb2.UserEventMessage.SerializeToString,
-            campaign__service__pb2.ResponseMessage.FromString,
+            campaign__service__pb2.Response.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def NotifyUserAttributeChanged(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/scheduler.Campaign/NotifyUserAttributeChanged',
+            campaign__service__pb2.UserAttributeMessage.SerializeToString,
+            campaign__service__pb2.Response.FromString,
             options,
             channel_credentials,
             insecure,

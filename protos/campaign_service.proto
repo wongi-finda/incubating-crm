@@ -4,7 +4,8 @@ package scheduler;
 
 
 service Campaign {
-    rpc NotifyUserEvent (UserEventMessage) returns (ResponseMessage);
+    rpc NotifyUserEventEmitted (UserEventMessage) returns (Response);
+    rpc NotifyUserAttributeChanged (UserAttributeMessage) returns (Response);
 }
 
 message JsonSerialized {
@@ -21,7 +22,7 @@ message UserAttributeMessage {
     JsonSerialized attribute_data = 2;  // Includes attribute name and attribute value
 }
 
-message ResponseMessage {
+message Response {
     bool success = 1;
     string reason = 2;
 }

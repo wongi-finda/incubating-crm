@@ -29,7 +29,7 @@ class CampaignService:
                 campaign=campaign,
             )
 
-    def handle_user_event(self, event: UserEvent):
+    def handle_user_event(self, event: UserEvent) -> None:
         # Find trigger campaigns
         trigger_campaigns = self.collection.find({
             "status": CampaignStatus.active,

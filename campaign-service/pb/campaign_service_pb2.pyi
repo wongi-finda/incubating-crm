@@ -26,7 +26,7 @@ class UserAttributeMessage(_message.Message):
     attribute_data: JsonSerialized
     def __init__(self, user_id: _Optional[int] = ..., attribute_data: _Optional[_Union[JsonSerialized, _Mapping]] = ...) -> None: ...
 
-class ResponseMessage(_message.Message):
+class Response(_message.Message):
     __slots__ = ("success", "reason")
     SUCCESS_FIELD_NUMBER: _ClassVar[int]
     REASON_FIELD_NUMBER: _ClassVar[int]
