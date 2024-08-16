@@ -12,6 +12,7 @@ class SendResult:
 
 
 class BaseChannel(ABC, Generic[T]):
+    @property
     @abstractmethod
     def name(self) -> str:
         raise NotImplementedError()

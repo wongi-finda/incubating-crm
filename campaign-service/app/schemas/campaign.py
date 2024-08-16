@@ -16,6 +16,7 @@ class CampaignStatus(StrEnum):
 
 
 class CampaignChannel(StrEnum):
+    stdout = auto()      # standard output (for test)
     noti_10000 = auto()  # 금명보 알림 via mobile push
     noti_10001 = auto()  # 금명보 알림 via 카카오 알림톡
 

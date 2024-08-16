@@ -117,9 +117,13 @@ class CampaignService:
             event: UserEvent,
     ) -> None:
         # TODO: Re-evaluate segment membership at send-time
+        if campaign["status"] != CampaignStatus.active:
+            return
 
-        campaign_id = campaign["_id"]
-        print(f"Deliver action-based delivery campaign[{campaign_id}](user_id={event.user_id})")
+        self.messaging_service.send(
+            channel=campaign["channel"],
+            data=event,
+        )
 
     def _deliver_attribute_triggered_campaign(
             self,
