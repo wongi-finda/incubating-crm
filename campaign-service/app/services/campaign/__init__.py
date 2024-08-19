@@ -109,7 +109,10 @@ class CampaignService:
         campaign_id = campaign["_id"]
 
         # TODO: implement me
-        print(f"Deliver scheduled delivery campaign[{campaign_id}]")
+        self.messaging_service.send(
+            channel=campaign["channel"],
+            data=...
+        )
 
     def _deliver_event_triggered_campaign(
             self,
